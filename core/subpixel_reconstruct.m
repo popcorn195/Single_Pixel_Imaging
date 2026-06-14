@@ -4,10 +4,11 @@
 % H[ M , N ]
 % Q[ M , 1 ]
 
-function [O_star,H_pinv] = subpixel_reconstruct(H,Q,Mx,My,Nx,Ny)
+function [O_star] = subpixel_reconstruct(H,Q,Mx,My,Nx,Ny)
     
-    H_pinv=pinv(H);
-    O_vec = H_pinv * Q;
+    % H_pinv=pinv(H);
+    % O_vec = H_pinv * Q;
+    O_vec = lsqminnorm(H, Q);
 
     recon_H= My*(Ny+1);
     recon_W= Mx*(Nx+1);

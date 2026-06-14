@@ -18,14 +18,19 @@ close all;
 addpath('data/images');
 
 % parameters
-p = 16;       
+p = 64;       
 bin_factor = 4;      
 Mx = p;        
 My = p;       
 Nx = 2;      
-Ny = 2;       
-N = 100;       
+Ny = 2;        
+
+sampling_rate = 0.5;
+N = round(sampling_rate * (p+2)^2);
+
 noise_std = 0.0;      
+
+tic
 
 fprintf('-SPI Subpixel Shift Reconstruction-\n');
 fprintf('\nSpeckle size: %dx%d | Shifts: (%d,%d) | Patterns: %d\n', p, p, Nx, Ny, N);
@@ -57,6 +62,10 @@ patterns = cell(N, 1);
 for k = 1:N
     cc = generate_speckle(p+2);                                  
     patterns{k} = double(cc);
+
+    % for hardware integration:
+    % cc_binned = pixel_bin(cc, bin_factor);
+    % patterns{k} = double(cc_binned);
 end
 
 
@@ -78,11 +87,16 @@ fprintf('Q vector saved.\n');
 
 % reconstruct O*
 fprintf('\nReconstructing O*...\n');
-[O_star, H_pinv] = subpixel_reconstruct(H, Q, Mx, My, Nx, Ny);
+% [O_star, H_pinv] = subpixel_reconstruct(H, Q, Mx, My, Nx, Ny);
+[O_star] = subpixel_reconstruct(H, Q, Mx, My, Nx, Ny);
+
+elapsedTime = toc; 
 
 
 % evaluate
 fprintf('\n-Metrics-\n');
+
+fprintf('Execution time: %.4f seconds\n', elapsedTime);
 
 fprintf('\nWith subpixel shift (O*):\n');
 metrics_star = evaluate_metrics(O_star, img);
@@ -98,14 +112,20 @@ imshow(O_star, []);
 title(sprintf('With Subpixel Shift O*\nSSIM: %.4f | PSNR: %.2fdB', ...
       metrics_star.ssim_val, metrics_star.psnr_val));
 
-sgtitle(sprintf('SPI Reconstruction | p=%d | Shifts=(%d,%d) | N=%d patterns', ...
-        p, Nx, Ny, N));
+sgtitle(sprintf('SPI Reconstruction | p=%d | Shifts=(%d,%d) | N=%d patterns | Time=%.2f', ...
+        p, Nx, Ny, N,elapsedTime));
 
 
-saveas(gcf, 'results/figures/O_star_comparison.png');
+
+
+%saveas(gcf, 'results/figures/O_star_comparison.png');
+saveas(gcf, sprintf('results/figures/O_star_comparison_p%d_N%d_Nx%d_Ny%d.png', ...
+    p, N, Nx, Ny));
 fprintf('\nFigure saved to results/figures/\n');
 
-save('results/metrics/metrics.mat', 'metrics_star');
+%save('results/metrics/metrics.mat', 'metrics_star');
+save(sprintf('results/metrics/metrics_p%d_N%d_Nx%d_Ny%d.mat', ...
+    p, N, Nx, Ny), 'metrics_star');
 fprintf('Metrics saved.\n');
 fprintf('\nDone\n');
 
