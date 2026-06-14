@@ -23,17 +23,14 @@ function H = build_H_matrix(patterns, Mx, My, Nx, Ny)
 
         for i = 0:Nx
             for j = 0:Ny
-                % shift pattern
                 shifted = circshift(base_pattern, [j, i]);
 
-                % crop to effective area [My x Mx]
+                % crop: [My x Mx]
                 effective = shifted(2:My+1, 2:Mx+1);
 
-                % upsample: each pixel → (Ny+1) x (Nx+1) block
-                subpixel_pattern = kron(effective, ones(Ny+1, Nx+1));
-                % shape: [My*(Ny+1) x Mx*(Nx+1)]
-
-                % reshape to row vector
+                % upsample: [My*(Ny+1) x Mx*(Nx+1)]
+                subpixel_pattern = kron(effective, ones(Ny+1, Nx+1));  
+               
                 H(row_idx, :) = subpixel_pattern(:)';
 
                 row_idx = row_idx + 1;
