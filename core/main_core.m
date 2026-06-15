@@ -18,7 +18,7 @@ close all;
 addpath('data/images');
 
 % parameters
-p = 64;       
+p = 16;       
 bin_factor = 4;      
 Mx = p;        
 My = p;       

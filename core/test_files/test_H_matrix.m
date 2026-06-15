@@ -1,5 +1,3 @@
-% master script: implements SPI with subpixel speckle shift up to O*
-
 % p : base speckle pattern size (16, 32, 64)
 % Mx : effective imaging area width
 % My : effective imaging area height
@@ -7,30 +5,27 @@
 % Ny : subpixel shifts in y
 % N : number of random speckle patterns
 
-% cc[ (p+2) , (p+2) ] : +2 for border (effective area)
-% patterns : array {N x 1} of [(p+2) , (p+2)] binary patterns
-
 clear; clc; close all;
 addpath('core');
 
-p  = 2;   
+p = 2;   
 Nx = 1;   
 Ny = 1;  
-N  = 1;   
+N = 1;   
 
 pat = [0 0 0 0;
        0 1 0 0;
        0 0 1 0;
        0 0 0 0];
 
-patterns    = cell(1,1);
+patterns = cell(1,1);
 patterns{1} = double(pat);
 
 fprintf('Base pattern:\n'); disp(pat);
 fprintf('Effective area:\n'); disp(pat(2:p+1, 2:p+1));
 
 
-total_shifts = (Nx+1) * (Ny+1);   % = 4
+total_shifts = (Nx+1) * (Ny+1); % = 4
 % grid: 4 rows (one per stage), total_shifts cols (one per shift)
 % total subplots = 4 * 4 = 16  
 
@@ -41,13 +36,13 @@ col = 1;
 for i = 0:Nx
     for j = 0:Ny
 
-        shifted   = circshift(pat, [j, i]);
+        shifted = circshift(pat, [j, i]);
 
         effective = shifted(2:p+1, 2:p+1);
 
-        subpixel  = kron(effective, ones(Ny+1, Nx+1));
+        subpixel = kron(effective, ones(Ny+1, Nx+1));
 
-        h_row_2d  = reshape(subpixel(:)', size(subpixel));
+        h_row_2d = reshape(subpixel(:)', size(subpixel));
 
 
         fprintf('\n--- shift(i=%d j=%d) ---\n', i, j);
