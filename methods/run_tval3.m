@@ -1,38 +1,69 @@
-%image reconstruction using TVAL3
+% Inputs:
+%   img_path : path to ground truth image
+%   phi_path : path to measurement matrix phi 
+%   meas_path : path to measurements y
+%   num_meas : number of CS measurements to use
 
-close all;
-clear all;
+function [U, metrics] = run_tval3(img_path, phi_path, meas_path, num_meas)
 
-addpath(genpath(pwd));
+    if nargin < 4
+        num_meas = 1000;
+    end
+    
 
-num_csmeas=1000;
+    x = imread(img_path);
+    x = double(rgb2gray(x));    
+    x = x / max(x(:));          
+    
+    A = dlmread(phi_path);
+    A = A(1:num_meas, :);
+    
+    load(meas_path, 'y');
+    y = y(1:num_meas, :);
+    
+    fprintf('Image size:     %dx%d\n', size(x,1), size(x,2));
+    fprintf('A size:         %dx%d\n', size(A,1), size(A,2));
+    fprintf('y length:       %d\n',    length(y));
+    
 
-x = imread('arrow_source.png');
+    opts.mu      = 2^8;
+    opts.beta    = 2^5;
+    opts.tol     = 1e-3;
+    opts.maxit   = 300;
+    opts.TVnorm  = 1;
+    opts.nonneg  = false;
+    
 
-A = dlmread('phi_for_p_mat_64.txt'); 
-A = A(1:num_csmeas, :);
+    fprintf('\nRunning TVAL3...\n');
 
-load cs_meas.mat;
-%y = dlmread('cs_meas.txt');
-y = y(1:num_csmeas,:);
+    tic;
+        [U, ~] = TVAL3(A, y, 64, 64, opts);
+        fprintf('TVAL3 done in %.2f seconds\n', toc);
+    
+    
+    U = double(U);
+    U = U - min(U(:));
+    U = U / max(U(:));
+    
 
-clear opts
-opts.mu = 2^8;%??2^8??
-opts.beta = 2^5;
-opts.tol = 1E-3;
-opts.maxit = 300;
-opts.TVnorm = 1;
-opts.nonneg = false;
+    x_resized = imresize(x, size(U));
+    metrics   = evaluate_metrics(U, x_resized);
+    
 
-t = cputime;
-[U, out] = TVAL3(A,y,64,64,opts);
-t = cputime - t
+    figure('Position', [100 100 800 400]);
+    
+    subplot(1,2,1);
+    imagesc(x); colormap gray; axis image off;
+    title('Original Image');
+    
+    subplot(1,2,2);
+    imagesc(U); colormap gray; axis image off;
+    title(sprintf('TVAL3 Reconstruction\nSSIM: %.4f | PSNR: %.2fdB', ...
+          metrics.ssim_val, metrics.psnr_val));
+    
+    sgtitle(sprintf('TVAL3 | measurements=%d', num_meas));
+    
+    saveas(gcf, sprintf('results/figures/tval3_N%d.png', num_meas));
+    fprintf('Figure saved.\n');
 
-figure;
-subplot(1, 2, 1);  % 1 row, 2 columns, first image
-imagesc(x);
-title('Original Image');
-
-subplot(1, 2, 2);  % second image
-imagesc(U);colormap("gray");
-title('Reconstructed Image');
+end
