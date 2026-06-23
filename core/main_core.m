@@ -129,3 +129,10 @@ save(sprintf('results/metrics/metrics_p%d_N%d_Nx%d_Ny%d.mat', ...
 fprintf('Metrics saved.\n');
 fprintf('\nDone\n');
 
+
+%for unet
+save(sprintf('unet/inputs/unet_input_p%d.mat', p), ...
+    'O_star', 'H', 'Q', 'img', 'p', 'Nx', 'Ny');
+fprintf('Saved unet input: O_star, H, Q\n');
+
+
