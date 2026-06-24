@@ -7,60 +7,37 @@
 % Nx, Ny : number of subpixel shifts
 % noise_std : standard deviation of Gaussian noise (0 = no noise)
 
-function Q = simulate_bucket_signal(object, patterns, Mx, My, Nx, Ny, noise_std)
-    if nargin < 7
+function Q = simulate_bucket_signal( ...
+    object,H,Mx,My,Nx,Ny,binFactor,noise_std)
+
+    if nargin < 8
         noise_std = 0;
     end
 
-    N = length(patterns);
+    Mx_hr = Mx * binFactor;
+    My_hr = My * binFactor;
 
+    object = double(object);
 
-    object = double(squeeze(object));
-    if ndims(object) == 3
-        object = rgb2gray(object);
+    if ndims(object)==3
+        object = rgb2gray(uint8(object));
         object = double(object);
     end
 
-    object = object / max(object(:));
+    object = imresize(object,[My_hr Mx_hr]);
 
+    object = object - min(object(:));
 
-    expected_H = My * (Ny+1);
-    expected_W = Mx * (Nx+1);
-
-    fprintf('Object size after squeeze: %dx%d | Expected: %dx%d\n', size(object,1), size(object,2), expected_H, expected_W);
-
-    if size(object,1) ~= expected_H || size(object,2) ~= expected_W
-        fprintf('Resizing object...\n');
-        object = imresize(object, [expected_H, expected_W]);
+    if max(object(:))>0
+        object = object/max(object(:));
     end
 
+    assert(size(H,2)==numel(object));
 
-    total_measurements = N * (Nx+1) * (Ny+1);
-    Q = zeros(total_measurements, 1);
+    Q = H*object(:);
 
-    idx = 1;
-
-    for k = 1:N
-        base_pattern = double(patterns{k});
-
-        for i = 0:Nx
-            for j = 0:Ny
-                shifted = circshift(base_pattern, [j, i]);
-
-                effective = shifted(2:My+1, 2:Mx+1);
-
-                subpixel_pattern = double(kron(effective, ones(Ny+1, Nx+1)));
-
-                Q(idx) = sum(sum(subpixel_pattern .* object));
-                idx = idx + 1;
-            end
-        end
-    end
-
-    % add noise
     if noise_std > 0
-        Q = Q + noise_std * randn(size(Q));
+        Q = Q + noise_std*max(Q)*randn(size(Q));
     end
 
-    fprintf('Bucket signals computed: %d measurements\n', total_measurements);
 end
