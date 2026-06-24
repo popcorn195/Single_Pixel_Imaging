@@ -8,35 +8,57 @@
 % (Nx+1),(Ny+1) : number of shifts
 % Mx,My : effective imaging area size
 
-function H = build_H_matrix(patterns, Mx, My, Nx, Ny)
+function H = build_H_matrix(patterns, Mx, My, Nx, Ny, binFactor)
+
     N = length(patterns);
 
-    total_measurements = N * (Nx+1) * (Ny+1);
-    total_pixels       = Mx * My * (Nx+1) * (Ny+1);
+    Mx_hr = Mx * binFactor;
+    My_hr = My * binFactor;
 
-    H = zeros(total_measurements, total_pixels);
+    total_measurements = N * (Nx+1) * (Ny+1);
+    total_pixels       = Mx_hr * My_hr;
+
+    H = zeros(total_measurements,total_pixels);
+    %H = sparse(total_measurements,total_pixels);
 
     row_idx = 1;
 
     for k = 1:N
-        base_pattern = double(patterns{k});  % [p+2 x p+2]
+
+        base_pattern = double(patterns{k});
+
+        binned = pixel_bin(base_pattern,binFactor);
 
         for i = 0:Nx
             for j = 0:Ny
-                shifted = circshift(base_pattern, [j, i]);
 
-                % crop: [My x Mx]
-                effective = shifted(2:My+1, 2:Mx+1);
+                dx = round(i * binFactor / Nx);
+                dy = round(j * binFactor / Ny);
 
-                % upsample: [My*(Ny+1) x Mx*(Nx+1)]
-                subpixel_pattern = kron(effective, ones(Ny+1, Nx+1));  
-               
-                H(row_idx, :) = subpixel_pattern(:)';
+                shifted = zeros(size(binned));
+
+                shifted(1+dy:end,1+dx:end) = ...
+                    binned(1:end-dy,1:end-dx);
+
+                row_start = floor(size(shifted,1)/2 - My_hr/2) + 1;
+                col_start = floor(size(shifted,2)/2 - Mx_hr/2) + 1;
+
+                effective = shifted( ...
+                    row_start:row_start+My_hr-1,...
+                    col_start:col_start+Mx_hr-1);
+
+                H(row_idx,:) = effective(:)';
+                %H(row_idx,:) = sparse(effective(:)');
 
                 row_idx = row_idx + 1;
+
             end
         end
     end
 
-    fprintf('H matrix built: %d x %d\n', size(H,1), size(H,2));
+    fprintf('H matrix built: %d x %d\n', ...
+        size(H,1),size(H,2));
+
+    fprintf('Rank(H) = %d\n',rank(H));
+
 end
