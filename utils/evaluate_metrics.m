@@ -9,8 +9,8 @@ function metrics = evaluate_metrics(img_recon, img_ref)
     end
 
     % Clamp to [0,1]
-    img_recon = max(min(img_recon,1),0);
-    img_ref   = max(min(img_ref,1),0);
+    %img_recon = max(min(img_recon,1),0);
+    %img_ref   = max(min(img_ref,1),0);
 
     % Compute metrics directly
     metrics.psnr_val = psnr(img_recon, img_ref, 1);

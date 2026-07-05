@@ -9,15 +9,14 @@ num_csmeas=1000;
 
 x = imread('arrow_source.png');
 
-A = dlmread('phi_for_p_mat_64.txt'); 
+A = readmatrix('phi_for_p_mat_64.txt'); 
 A = A(1:num_csmeas, :);
 
 load cs_meas.mat;
-%y = dlmread('cs_meas.txt');
 y = y(1:num_csmeas,:);
 
 clear opts
-opts.mu = 2^8;%??2^8??
+opts.mu = 2^8;
 opts.beta = 2^5;
 opts.tol = 1E-3;
 opts.maxit = 300;
@@ -26,7 +25,7 @@ opts.nonneg = false;
 
 t = cputime;
 [U, out] = TVAL3(A,y,64,64,opts);
-t = cputime - t
+t = cputime - t ;
 
 figure;
 subplot(1, 2, 1);  % 1 row, 2 columns, first image
